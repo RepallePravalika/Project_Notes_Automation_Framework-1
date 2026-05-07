@@ -1,26 +1,46 @@
 pipeline {
+
     agent any
 
     stages {
-        stage('Checkout Source Code') {
+
+        stage('Checkout Code') {
             steps {
-                git branch: 'main', 
-                    url: 'https://github.com/RepallePravalika/Notes_Automation_Framework_.git'
+                git branch: 'main',
+                    url: 'https://github.com/RepallePravalika/Project_Notes_Automation_Framework.git'
             }
         }
 
-        stage('Install Python Dependencies') {
+        stage('Install Dependencies') {
             steps {
-                bat 'pip install -r requirements.txt'
+                // Delete old venv if exists
+                bat 'if exist venv rmdir /s /q venv'
+
+                // Create fresh virtual environment
+                bat 'python -m venv venv'
+
+                // Upgrade pip
+                bat 'venv\\Scripts\\python -m pip install --upgrade pip'
+
+                // Install requirements
+                bat 'venv\\Scripts\\python -m pip install -r requirements.txt'
             }
         }
 
-        stage('Parallel Test Execution') {
+        stage('Run Tests (Parallel)') {
             steps {
-                // We use catchError to ensure that even if tests fail, 
-                // the subsequent stages for report collection and artifact uploading will run.
-                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                    bat 'pytest -n 2 -v --html=reports/report.html --self-contained-html'
+                // Create reports directory if it doesn't exist
+                bat 'if not exist reports mkdir reports'
+
+                // Continue pipeline even if tests fail
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    bat '''
+                    venv\\Scripts\\python -m pytest ^
+                    -n 2 ^
+                    --alluredir=allure-results ^
+                    --html=reports/report.html ^
+                    --self-contained-html
+                    '''
                 }
             }
         }
@@ -30,14 +50,35 @@ pipeline {
         always {
             script {
                 echo 'CI/CD Pipeline: Capturing Reports and Artifacts...'
-                
-                // Archiving everything as per requirement 4 and 5
-                // This includes the HTML report, screenshots of any failures, and execution logs.
-                archiveArtifacts artifacts: 'reports/report.html, screenshots/*.png, logs/*.log', 
-                                 fingerprint: true, 
-                                 allowEmptyArchive: true
-                
-                echo 'Artifacts uploaded successfully. You can download them from the build dashboard.'
+
+                // Generate Allure Report gracefully
+                try {
+                    allure([
+                        includeProperties: false,
+                        jdk: '',
+                        results: [[path: 'allure-results']]
+                    ])
+                } catch (Exception e) {
+                    echo "WARNING: Allure report generation failed. Error: ${e.message}"
+                    echo "Please configure 'Allure Commandline' in Jenkins Global Tool Configuration if you want Allure reports."
+                }
+
+                // Publish HTML Report
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'reports',
+                    reportFiles: 'report.html',
+                    reportName: 'Pytest HTML Report'
+                ])
+
+                // Archive Artifacts
+                archiveArtifacts(
+                    artifacts: 'reports/report.html, allure-results/**, screenshots/**, logs/**',
+                    fingerprint: true,
+                    allowEmptyArchive: true
+                )
             }
         }
     }

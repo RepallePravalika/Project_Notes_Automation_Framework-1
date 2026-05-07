@@ -6,6 +6,8 @@ from pages.notes_page import NotesPage
 
 from utils.logger import logger
 
+from utils.ai_test_data import AITestDataGenerator
+
 
 def test_create_note(driver):
 
@@ -54,6 +56,9 @@ def test_create_note(driver):
         "Creating new note"
     )
 
+    # Generate AI Test Data
+    note_data = AITestDataGenerator.generate_note_data()
+
     notes.click_add_note()
 
     notes.select_category(
@@ -61,11 +66,11 @@ def test_create_note(driver):
     )
 
     notes.enter_title(
-        "Automation Test Note"
+        note_data["title"]
     )
 
     notes.enter_description(
-        "Created using Selenium automation"
+        note_data["description"]
     )
 
     notes.click_create()
@@ -76,7 +81,7 @@ def test_create_note(driver):
 
     # Validate note created
     assert notes.is_note_created(
-        "Automation Test Note"
+        note_data["title"]
     )
 
     logger.info(

@@ -52,3 +52,31 @@ def pytest_runtest_makereport(item, call):
                 attachment_type=
                 allure.attachment_type.PNG
             )
+
+            # AI-Assisted Failure Analysis
+            from utils.failure_analyzer import FailureAnalyzer
+            from utils.logger import logger
+
+            # Extract exception info
+            error_msg = f"{call.excinfo.typename}: {str(call.excinfo.value)}"
+            analysis = FailureAnalyzer.analyze(error_msg)
+
+            # Log analysis
+            logger.error("-" * 50)
+            logger.error("AI-POWERED FAILURE ANALYSIS")
+            logger.error(f"Detected Issue: {analysis['detected_issue']}")
+            logger.error(f"Insight: {analysis['insight']}")
+            logger.error(f"Suggested Action: {analysis['suggested_action']}")
+            logger.error("-" * 50)
+
+            # Attach analysis to Allure
+            analysis_text = (
+                f"DETECTED ISSUE: {analysis['detected_issue']}\n"
+                f"INSIGHT: {analysis['insight']}\n"
+                f"SUGGESTED ACTION: {analysis['suggested_action']}"
+            )
+            allure.attach(
+                analysis_text,
+                name="AI Failure Analysis",
+                attachment_type=allure.attachment_type.TEXT
+            )
