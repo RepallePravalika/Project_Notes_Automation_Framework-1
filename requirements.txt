@@ -8,3 +8,4 @@ pytest-html
 pytest-rerunfailures
 PyYAML
 python-dotenv
+openai

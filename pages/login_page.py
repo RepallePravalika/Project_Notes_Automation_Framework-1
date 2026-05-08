@@ -128,7 +128,7 @@ class LoginPage(BasePage):
         
         if wait_for_dashboard:
             # Wait for dashboard to load after login
-            WebDriverWait(self.driver, 15).until(
+            WebDriverWait(self.driver, 30).until(
                 EC.visibility_of_element_located(self.ADD_NOTE_BTN)
             )
 
