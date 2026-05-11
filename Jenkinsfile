@@ -13,23 +13,23 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                // Delete old venv if exists
+                // Deletion of old venv
                 bat 'if exist venv rmdir /s /q venv'
 
-                // Create fresh virtual environment
+                // create new venv
                 bat 'python -m venv venv'
 
                 // Upgrade pip
                 bat 'venv\\Scripts\\python -m pip install --upgrade pip'
 
-                // Install requirements
+                // Install  req
                 bat 'venv\\Scripts\\python -m pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests (Parallel)') {
             steps {
-                // Create reports directory if it doesn't exist
+                // Create reports dir
                 bat 'if not exist reports mkdir reports'
 
                 // Continue pipeline even if tests fail
@@ -51,7 +51,7 @@ pipeline {
             script {
                 echo 'CI/CD Pipeline: Capturing Reports and Artifacts...'
 
-                // Generate Allure Report gracefully
+                // Generation Allure Report
                 try {
                     allure([
                         includeProperties: false,
@@ -63,7 +63,7 @@ pipeline {
                     echo "Please configure 'Allure Commandline' in Jenkins Global Tool Configuration if you want Allure reports."
                 }
 
-                // Publish HTML Report
+                // HTML Report
                 publishHTML(target: [
                     allowMissing: false,
                     alwaysLinkToLastBuild: true,
@@ -73,7 +73,7 @@ pipeline {
                     reportName: 'Pytest HTML Report'
                 ])
 
-                // Archive Artifacts
+                //  Artifacts
                 archiveArtifacts(
                     artifacts: 'reports/report.html, allure-results/**, screenshots/**, logs/**',
                     fingerprint: true,
