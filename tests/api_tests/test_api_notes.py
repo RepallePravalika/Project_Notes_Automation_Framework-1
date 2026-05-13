@@ -24,7 +24,7 @@ def test_get_notes(api_client):
     )
 
     # Validate response time
-    assert response.elapsed.total_seconds() < 5
+    assert response.elapsed.total_seconds() < 2
 
     logger.info(
         "Response time validation successful"
